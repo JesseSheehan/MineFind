@@ -11,18 +11,20 @@ import SwiftUI
 struct TileView: View {
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @EnvironmentObject var orientation: OrientationModel
     
     @Binding var tile: Tile
     @State var vm: FieldViewModel
     @State var gameState: GameState = .playing
     var imageCache: ImageCache = ImageCache()
 
-    var onPhoneW: Double {vm.iPhoneWidth}
-    var onPhoneH: Double {vm.iPhoneWidth * 0.8}
-    var onPadW: Double {vm.iPadWidth}
-    var onPadH: Double {vm.iPadWidth * 0.8}
-    var width: Double { UIDevice.isIPhone ? onPhoneW : onPadW }
-    var height: Double { UIDevice.isIPhone ? onPhoneH : onPadH }
+    var width: Double { vm.tileWidth(on: orientation) }
+    //square on the open iPhone Duo; slightly shorter than wide everywhere else
+    var height: Double { orientation.isLargeIPhoneDisplay ? width : width * 0.8 }
+    //on the open iPhone Duo, numbers grow with the bigger small and medium tiles
+    var numberFont: Font {
+        orientation.isLargeIPhoneDisplay ? .system(size: max(22, width * 0.45), weight: .bold) : Font.title2.bold()
+    }
     
     var animationAmount = 0.0
     
@@ -82,7 +84,7 @@ struct TileView: View {
             } else if tile.isRevealed && tile.surroundingMineCount > 0 {
                 return AnyView(
                     Text("\(tile.surroundingMineCount)")
-                        .font(Font.title2.bold())
+                        .font(numberFont)
                         .frame(width: width, height: height)
                     
                 )

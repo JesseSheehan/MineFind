@@ -10,13 +10,20 @@ struct StandardGridView: View {
     @State var vm: FieldViewModel
     @EnvironmentObject var orientation: OrientationModel
 
-    var width: Double { UIDevice.isIPhone ? vm.iPhoneWidth : vm.iPadWidth }
+    var width: Double { vm.tileWidth(on: orientation) }
+
+    //iPhone Duo: fixed spacing so tile sizes can be worked out to fit; system default elsewhere
+    var columnSpacing: CGFloat? {
+        if orientation.usesOuterDisplayLayout { return FieldViewModel.outerDisplayTileSpacing }
+        if orientation.isLargeIPhoneDisplay { return FieldViewModel.largeIPhoneColumnSpacing }
+        return nil
+    }
     
     
     var body: some View {
         if vm.gameStarted {
             LazyVGrid(columns: Array(
-                        repeating: GridItem(.fixed(width)),
+                        repeating: GridItem(.fixed(width), spacing: columnSpacing),
                         count:vm.columnCount
                     ),
                     alignment: .center,

@@ -7,15 +7,16 @@
 
 import SwiftUI
 import SwiftData
+import GameKit
 
 struct HighScoreListView: View {
     
     @EnvironmentObject var orientation: OrientationModel
     @Environment(\.modelContext) private var modelContext
     @State var vm: FieldViewModel
-    
-    
-    
+
+
+
     var body: some View {
         
         Text("HIGH SCORES")
@@ -116,21 +117,35 @@ struct HighScoreListView: View {
                 Text("My Scores")
             }
             
-            VStack {
-                Text("Coming Soon")
-                HomeButtonView(vm: vm)
-                    .padding(.bottom, 10)
+            LeaderboardTab(
+                icon: "globe",
+                title: "Global Leaderboard",
+                buttonLabel: "View Global Scores",
+                vm: vm
+            ) {
+                GKAccessPoint.shared.trigger(
+                    leaderboardID: vm.classicLeaderboardID,
+                    playerScope: .global,
+                    timeScope: .allTime
+                )
             }
             .tabItem {
                 Image(systemName: "globe.fill")
                 Text("Global Scores")
             }
-            
-            
-            VStack {
-                Text("Coming Soon")
-                HomeButtonView(vm: vm)
-                    .padding(.bottom, 10)
+
+
+            LeaderboardTab(
+                icon: "person.3",
+                title: "Friends Leaderboard",
+                buttonLabel: "View Friend Scores",
+                vm: vm
+            ) {
+                GKAccessPoint.shared.trigger(
+                    leaderboardID: vm.classicLeaderboardID,
+                    playerScope: .friendsOnly,
+                    timeScope: .allTime
+                )
             }
             .tabItem {
                 Image(systemName: "person.3.fill")
@@ -139,6 +154,51 @@ struct HighScoreListView: View {
             
         }
         .padding(0)
+    }
+}
+
+
+/// A leaderboard tab that prompts the player to open the native Game Center
+/// leaderboard. Shows a sign-in note when the local player isn't authenticated,
+/// since the native UI needs an authenticated Game Center account.
+struct LeaderboardTab: View {
+    let icon: String
+    let title: String
+    let buttonLabel: String
+    @State var vm: FieldViewModel
+    let action: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: icon)
+                .font(.system(size: 60))
+                .foregroundStyle(.secondary)
+
+            Text(title)
+                .font(.title2.bold())
+
+            if vm.isGameCenterAuthenticated {
+                Button(action: action) {
+                    Text(buttonLabel)
+                        .font(.headline)
+                        .padding(.horizontal)
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                Text("Sign in to Game Center in Settings to see leaderboards.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            Spacer()
+
+            HomeButtonView(vm: vm)
+                .padding(.bottom, 10)
+        }
     }
 }
 

@@ -22,7 +22,7 @@ struct NewGameButton: View {
             //vm.gameStarted = false
             //vm.gameTiles.removeAll()
             
-            vm.setUpGame(isLandscape: orientation.isLandscape)
+            vm.setUpGame(orientation: orientation.current)
             
 //            withAnimation(.spring(duration:0.3, bounce: 0.5)){
 //             //   animationAmount += 720

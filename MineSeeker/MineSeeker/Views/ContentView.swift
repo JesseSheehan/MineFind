@@ -60,6 +60,15 @@ struct ContentView: View {
                 //print("change orientation")
                 vm.handleOrientationChange(to: newOrientation)
             }
+            //closing the iPhone Duo during a huge game heads back to the main menu,
+            //since the field won't fit the outer display. The game can be resumed once reopened
+            .onChange(of: orientation.supportsLargeFields) {_, supportsLargeFields in
+                let isInGame = [GameState.playing, .animating, .won, .lost].contains(vm.gameState)
+                if !supportsLargeFields && isInGame && vm.currentFieldNeedsLargeDisplay {
+                    vm.gameStarted = false
+                    vm.gameState = .home
+                }
+            }
             .onChange(of: gamesWon) {
                 print("\(gamesWon) gamewon")
                 print("\(lastVersionPromptedForReview) last version")

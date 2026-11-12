@@ -27,7 +27,7 @@ struct ScoreView: View {
         .padding(.horizontal, 15)
         .background(vm.gameState == .lost ? .red : .blue)
         .cornerRadius(20)
-        .font(orientation.isLandscape ? Font.title : Font.largeTitle)
+        .font(orientation.isLandscape ? Font.title : orientation.isOuterDisplay ? Font.title3 : Font.largeTitle)
     }
 }
 

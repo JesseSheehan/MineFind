@@ -237,7 +237,8 @@ final class FieldViewModel {
     }
     
     
-    func setUpGame(isLandscape: Bool) {
+    func setUpGame(orientation: UIDeviceOrientation) {
+        let isLandscape = orientation.isLandscape
         rowCount = getRowCount(size: gridSize, isLandscape: isLandscape)
         columnCount = getColumnCount(size: gridSize, isLandscape: isLandscape)
         mineCount = 0
@@ -259,7 +260,8 @@ final class FieldViewModel {
         gameStarted = true
         gameState = .playing
         
-        gridRotation = isLandscape ? .landscapeRight : .portraitUp
+        //start from the actual orientation so later rotations turn the field the right way
+        gridRotation = gridRotation(for: orientation) ?? (isLandscape ? .landscapeRight : .portraitUp)
 
     }
     
@@ -538,6 +540,62 @@ final class FieldViewModel {
         }
     }
     
+    //space between tiles on the iPhone Duo's outer display, where width is tight
+    static let outerDisplayTileSpacing: CGFloat = 1
+    
+    //space between columns on the open iPhone Duo (the system default elsewhere)
+    static let largeIPhoneColumnSpacing: CGFloat = 8
+
+    //largest tile on the open iPhone Duo for small and medium fields
+    static let largeIPhoneMaxTileWidth: Double = 90
+
+    //tile width for this device. On the iPhone Duo's outer display, tiles only shrink
+    //(never grow) if the whole field wouldn't otherwise fit on screen
+    func tileWidth(on orientation: OrientationModel) -> Double {
+        let standardWidth = UIDevice.isIPhone ? iPhoneWidth : iPadWidth
+        guard columnCount > 0, rowCount > 0 else { return standardWidth }
+        if orientation.isLargeIPhoneDisplay {
+            return openDuoTileWidth(on: orientation, standardWidth: standardWidth)
+        }
+        guard orientation.usesOuterDisplayLayout else { return standardWidth }
+        let space = orientation.outerDisplayFieldSpace
+        let spacing = Self.outerDisplayTileSpacing
+        let columns = CGFloat(columnCount)
+        let rows = CGFloat(rowCount)
+        let widthThatFits = (space.width - (columns - 1) * spacing) / columns
+        //tiles are 0.8 as tall as they are wide; rows are 1pt apart (see StandardGridView)
+        let widthThatFitsHeight = (space.height - (rows - 1)) / rows / 0.8
+        return min(standardWidth, floor(min(widthThatFits, widthThatFitsHeight)))
+    }
+
+    //open iPhone Duo: square tiles. Small and medium fields grow to fill the bigger screen
+    //(up to largeIPhoneMaxTileWidth); big and huge keep the standard width. Either way they
+    //shrink if needed so the whole field fits
+    private func openDuoTileWidth(on orientation: OrientationModel, standardWidth: Double) -> Double {
+        let mediumTileCount = getRowCount(size: .med, isLandscape: false) * getColumnCount(size: .med, isLandscape: false)
+        //tile count rather than gridSize, so it stays right if the picker changes mid-game
+        let maxWidth = rowCount * columnCount <= mediumTileCount ? Self.largeIPhoneMaxTileWidth : standardWidth
+        let space = orientation.largeIPhoneFieldSpace
+        let columns = CGFloat(columnCount)
+        let rows = CGFloat(rowCount)
+        let widthThatFits = (space.width - (columns - 1) * Self.largeIPhoneColumnSpacing) / columns
+        //square tiles; rows are 1pt apart (see StandardGridView)
+        let widthThatFitsHeight = (space.height - (rows - 1)) / rows
+        return min(maxWidth, floor(min(widthThatFits, widthThatFitsHeight)))
+    }
+    
+    //full width of the field's columns on the iPhone Duo's outer display
+    func outerDisplayFieldWidth(on orientation: OrientationModel) -> CGFloat {
+        let columns = CGFloat(columnCount)
+        return columns * tileWidth(on: orientation) + max(columns - 1, 0) * Self.outerDisplayTileSpacing
+    }
+    
+    //true when the current game's field is bigger than a regular iPhone can show.
+    //uses the tile count so it stays right even if the picker changes mid-game
+    var currentFieldNeedsLargeDisplay: Bool {
+        gameTiles.count > getRowCount(size: .big, isLandscape: false) * getColumnCount(size: .big, isLandscape: false)
+    }
+    
     
     
     func itemMoved(location: CGPoint, textToDrag: String) -> DragState {
@@ -602,18 +660,104 @@ final class FieldViewModel {
     
     
     //ONLINE
-    
+
+    let classicLeaderboardID = "me.jesse.sheehan.MineFind.classicboard"
+
+    /// Observable mirror of GKLocalPlayer.local.isAuthenticated so views update
+    /// when sign-in finishes (authentication completes asynchronously).
+    var isGameCenterAuthenticated = GKLocalPlayer.local.isAuthenticated
+
     func authenticateUser() {
-        GKLocalPlayer.local.authenticateHandler = { _, error in
-                guard error == nil else {
-                    print(error?.localizedDescription ?? "")
-                    return
-                }
+        GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
+            // Game Center hands us a sign-in screen when the player isn't signed in yet.
+            if let viewController {
+                Self.topViewController()?.present(viewController, animated: true)
+                return
             }
+            if let error {
+                print("[GameCenter] Authentication failed: \(error.localizedDescription)")
+            }
+            self?.isGameCenterAuthenticated = GKLocalPlayer.local.isAuthenticated
+        }
     }
-    
-    //me.jesse.sheehan.MineFind.classicboard
-    
+
+    /// The front-most view controller, used to present the Game Center sign-in screen.
+    private static func topViewController() -> UIViewController? {
+        let root = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
+        var top = root
+        while let presented = top?.presentedViewController {
+            top = presented
+        }
+        return top
+    }
+
+    /// The best score we've successfully sent to Game Center, so we only upload
+    /// genuine personal bests. The leaderboard is also configured as BEST_SCORE,
+    /// so the server keeps the highest even if a lower one slips through.
+    /// Keyed per Game Center player so switching accounts doesn't block submissions.
+    private var bestSubmittedScore: Int {
+        get { UserDefaults.standard.integer(forKey: bestSubmittedScoreKey) }
+        set { UserDefaults.standard.set(newValue, forKey: bestSubmittedScoreKey) }
+    }
+
+    private var bestSubmittedScoreKey: String {
+        "bestSubmittedScore-\(GKLocalPlayer.local.gamePlayerID)"
+    }
+
+    /// Submits the given score to the classic leaderboard, but only when it beats
+    /// the best we've already uploaded. Logs each step so uploads can be verified
+    /// from the Xcode console.
+    func submitScoreToGameCenter(_ score: Int) {
+        guard GKLocalPlayer.local.isAuthenticated else {
+            print("[GameCenter] Not authenticated — skipping submit of \(score).")
+            return
+        }
+
+        guard score > bestSubmittedScore else {
+            print("[GameCenter] \(score) is not a new best (best is \(bestSubmittedScore)) — skipping submit.")
+            return
+        }
+
+        Task {
+            do {
+                try await GKLeaderboard.submitScore(
+                    score,
+                    context: 0,
+                    player: GKLocalPlayer.local,
+                    leaderboardIDs: [classicLeaderboardID]
+                )
+                bestSubmittedScore = score
+                print("[GameCenter] ✅ Submitted new best score \(score) to \(classicLeaderboardID).")
+
+                // Read the score back to confirm the round-trip actually landed.
+                if let entry = try await loadLocalPlayerEntry() {
+                    print("[GameCenter] Server now reports your best as \(entry.score) (rank \(entry.rank)).")
+                } else {
+                    print("[GameCenter] Submit succeeded but no local player entry came back yet (can take a moment to propagate).")
+                }
+            } catch {
+                print("[GameCenter] ❌ Failed to submit score \(score): \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Loads the local player's own entry on the classic leaderboard, or nil if
+    /// they don't have one yet. Useful for confirming a submission landed.
+    private func loadLocalPlayerEntry() async throws -> GKLeaderboard.Entry? {
+        let boards = try await GKLeaderboard.loadLeaderboards(IDs: [classicLeaderboardID])
+        guard let board = boards.first else { return nil }
+        let (localEntry, _, _) = try await board.loadEntries(
+            for: .global,
+            timeScope: .allTime,
+            range: NSRange(1...1)
+        )
+        return localEntry
+    }
+
     
     //LABELS
     

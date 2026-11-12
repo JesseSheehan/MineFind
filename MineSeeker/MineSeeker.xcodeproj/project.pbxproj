@@ -40,7 +40,6 @@
 		2F8AD67B2E660934000A5BB2 /* CheckButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8AD67A2E660933000A5BB2 /* CheckButtonView.swift */; };
 		2F8AD67D2E661359000A5BB2 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8AD67C2E661359000A5BB2 /* HomeView.swift */; };
 		2FAAF47E2E81E129004556A9 /* GameCenterResources.gamekit in Resources */ = {isa = PBXBuildFile; fileRef = 2FAAF47D2E81E129004556A9 /* GameCenterResources.gamekit */; };
-		2FAAF4802E81E4F9004556A9 /* GameCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAAF47F2E81E4F9004556A9 /* GameCenterView.swift */; };
 		2FAAF4822E81E5DE004556A9 /* GameCenterHighScoreListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAAF4812E81E5DE004556A9 /* GameCenterHighScoreListView.swift */; };
 		2FE0B9FA2E5E8A7F003589ED /* DraggableItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE0B9F92E5E8A7F003589ED /* DraggableItemView.swift */; };
 		2FE0B9FE2E5F6F61003589ED /* NewGameButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE0B9FD2E5F6F61003589ED /* NewGameButton.swift */; };
@@ -82,7 +81,6 @@
 		2F8AD67C2E661359000A5BB2 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2FAAF47C2E81E04C004556A9 /* MineSeeker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MineSeeker.entitlements; sourceTree = "<group>"; };
 		2FAAF47D2E81E129004556A9 /* GameCenterResources.gamekit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = GameCenterResources.gamekit; path = MineSeeker/GameCenterResources.gamekit; sourceTree = SOURCE_ROOT; };
-		2FAAF47F2E81E4F9004556A9 /* GameCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCenterView.swift; sourceTree = "<group>"; };
 		2FAAF4812E81E5DE004556A9 /* GameCenterHighScoreListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCenterHighScoreListView.swift; sourceTree = "<group>"; };
 		2FE0B9F92E5E8A7F003589ED /* DraggableItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableItemView.swift; sourceTree = "<group>"; };
 		2FE0B9FD2E5F6F61003589ED /* NewGameButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewGameButton.swift; sourceTree = "<group>"; };
@@ -212,7 +210,6 @@
 			isa = PBXGroup;
 			children = (
 				2FAAF4812E81E5DE004556A9 /* GameCenterHighScoreListView.swift */,
-				2FAAF47F2E81E4F9004556A9 /* GameCenterView.swift */,
 			);
 			path = GameCenterViews;
 			sourceTree = "<group>";
@@ -248,7 +245,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					2F51820F2E5772070045EB4A = {
 						CreatedOnToolsVersion = 26.0;
@@ -321,7 +318,6 @@
 				2F51833E2E5914420045EB4A /* TileView.swift in Sources */,
 				2F539E4A2E675A3B009032A3 /* InstructionsButtonView.swift in Sources */,
 				2FE0B9FA2E5E8A7F003589ED /* DraggableItemView.swift in Sources */,
-				2FAAF4802E81E4F9004556A9 /* GameCenterView.swift in Sources */,
 				2F5183592E5CB82D0045EB4A /* FieldViewModel.swift in Sources */,
 				2F87F2382E6CA95400BA99D0 /* HighScoreListView.swift in Sources */,
 				2F539E482E6758CB009032A3 /* HomeButtonView.swift in Sources */,
@@ -393,6 +389,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -450,6 +447,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -471,12 +469,12 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MineFind;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_NSGKFriendListUsageDescription = "MineFind uses your Game Center friends list to show your friends' high scores on the leaderboard.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -511,12 +509,12 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MineFind;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_NSGKFriendListUsageDescription = "MineFind uses your Game Center friends list to show your friends' high scores on the leaderboard.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

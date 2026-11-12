@@ -17,10 +17,10 @@ struct HomeView: View {
     
     @State var vm: FieldViewModel
     private var gridSizeOptions: [GridSize] {
-        if UIDevice.isIPhone {
-            return [.small, .med, .big]
-        } else {
+        if orientation.supportsLargeFields {
             return [.small, .med, .big, .huge]
+        } else {
+            return [.small, .med, .big]
         }
     }
     
@@ -81,19 +81,40 @@ struct HomeView: View {
                 OptionsButton(vm: vm)
             }
             if !vm.gameTiles.isEmpty && !vm.gameIsOver {
+                //while the iPhone Duo is closed, resuming a huge game shows the
+                //full-screen "open your iPhone" message instead of the field
                 Button("Resume Game") {
                     //vm.returnToGame(isLandscape: orientation.isLandscape)
+                    //the picker may have dropped to Big while the iPhone Duo was closed
+                    if vm.currentFieldNeedsLargeDisplay {
+                        vm.gridSize = .huge
+                    }
                     vm.gameStarted = true
                     vm.gameState = .playing
 
+                }
+                if vm.currentFieldNeedsLargeDisplay && !orientation.supportsLargeFields {
+                    //iPhone Duo closed with a huge game waiting
+                    Text("Open your iPhone to resume your \(vm.sizeLabel(for: .huge)) game")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
             }
         }
         .padding(10)
         
         Spacer()
+            .onAppear { clampGridSize() }
+            .onChange(of: orientation.supportsLargeFields) { clampGridSize() }
         
-        
+    }
+    
+    //when the iPhone Duo closes, falls back to the biggest size the outer display can show
+    private func clampGridSize() {
+        if !gridSizeOptions.contains(vm.gridSize) {
+            vm.gridSize = .big
+        }
     }
 }
 

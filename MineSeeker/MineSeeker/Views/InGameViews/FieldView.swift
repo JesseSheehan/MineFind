@@ -30,9 +30,20 @@ struct FieldView: View {
     var body: some View {
         ZStack {
             VStack {
-                Spacer().frame(height: spacerHeight(isLandscape: orientation.isLandscape, gridSize: vm.gridSize))
+                Spacer().frame(height: (centersFieldVertically ? 0 : spacerHeight(isLandscape: orientation.isLandscape, gridSize: vm.gridSize))
+                               + orientation.fieldTopOffset)
                 
-                if !orientation.isLandscape {
+                if usesOuterDisplayLayout {
+                    //iPhone Duo closed: score, hint, and home sit above the field
+                    HStack {
+                        ScoreView(vm: vm)
+                        if vm.gameState == .playing {
+                            CheckButtonView(vm: vm)
+                            HomeButtonView(vm: vm)
+                        }
+                    }
+                    .font(.caption.bold())
+                } else if !orientation.isLandscape {
                     ScoreView(vm: vm)
                 }
                 
@@ -47,12 +58,39 @@ struct FieldView: View {
                     //this .anim makes bombs appear automatically instead of fade in
                         .animation(nil, value: vm.gameState)
                 }
-                .padding()
+                .padding(usesOuterDisplayLayout ? [] : .all)
                 .scrollDisabled(true)
+                //iPhone Duo (open or closed): center the field vertically in the space it
+                //has, rather than pinning it to the top
+                .defaultScrollAnchor(centersFieldVertically ? .center : nil, for: .alignment)
+                //Big field on the iPhone Duo's outer display: slide it away from the side
+                //status bar. Padding on one side moves the centered field by half that amount
+                .padding(.leading, max(bigFieldShift, 0) * 2)
+                .padding(.trailing, max(-bigFieldShift, 0) * 2)
+                //scroll views skip the centering safe area, so center across the full width;
+                //the tiles are already sized to stay clear of the side status bar
+                .ignoresSafeArea(.container, edges: usesOuterDisplayLayout ? .horizontal : [])
                 
                 HStack {
                     VStack {
-                        if vm.gameState == .playing {
+                        if vm.gameState == .playing && usesOuterDisplayLayout {
+                            //iPhone Duo closed: the flag and shovel go below the field, unless
+                            //there's a side status bar to put them under (see overlay below)
+                            HStack {
+                                if !showsFlagAndShovelInStatusBar {
+                                    DraggableItemView(vm: vm, imageToDrag: "Flag", onChanged: vm.itemMoved, onEnded: vm.itemDropped)
+                                    DraggableItemView(vm: vm, imageToDrag: "Shovel", onChanged: vm.itemMoved, onEnded: vm.itemDropped)
+                                }
+                                if vm.difficultyLabel(for: vm.chanceOfMine) == "Beginner" {
+                                    InstructionsButtonView(vm: vm)
+                                        .font(.caption.bold())
+                                }
+                            }
+                            .transition(.asymmetric(
+                                insertion: .opacity,
+                                removal: .offset(x: 1000))
+                            )
+                        } else if vm.gameState == .playing {
                             StandardGameOptionsView(vm: vm)
                                 .transition(.asymmetric(
                                     insertion: .opacity,
@@ -84,9 +122,11 @@ struct FieldView: View {
                 }
             }
             .animation(.smooth, value: vm.gameState)
+            .opacity(showsOpenDeviceMessage ? 0 : 1)
             
             if vm.gameState == .lost {
                 ExplosionView(vm: vm)
+                    .opacity(showsOpenDeviceMessage ? 0 : 1)
                     .onAppear {
                         gamesLost += 1
                         //print("\(gamesLost) games lost")
@@ -94,14 +134,46 @@ struct FieldView: View {
             }
                 if vm.gameState == .won {
                     CelebrationView(vm: vm)
+                        .opacity(showsOpenDeviceMessage ? 0 : 1)
                         .onAppear {
                             gamesWon += 1
+                            vm.submitScoreToGameCenter(vm.gameScore)
                             checkForHighScore()
                         }
             }
+            
+            //iPhone Duo closed during a huge game. The field stays hidden underneath
+            //(instead of being removed) so the game picks right back up when reopened
+            if showsOpenDeviceMessage {
+                OpenDeviceView(vm: vm)
+                    .transition(.opacity)
+            }
+        }
+        //iPhone Duo closed: the flag and shovel sit in the side status bar's strip,
+        //centered vertically so they stay below the time, signal, and camera
+        .overlay {
+            if showsFlagAndShovelInStatusBar && vm.gameState == .playing && !showsOpenDeviceMessage {
+                HStack(spacing: 0) {
+                    if orientation.outerDisplayStatusBarEdge == .trailing {
+                        Spacer(minLength: 0)
+                    }
+                    VStack(spacing: 24) {
+                        DraggableItemView(vm: vm, imageToDrag: "Flag", onChanged: vm.itemMoved, onEnded: vm.itemDropped)
+                        DraggableItemView(vm: vm, imageToDrag: "Shovel", onChanged: vm.itemMoved, onEnded: vm.itemDropped)
+                    }
+                    .frame(width: orientation.outerDisplayStatusBarWidth)
+                    if orientation.outerDisplayStatusBarEdge == .leading {
+                        Spacer(minLength: 0)
+                    }
+                }
+                //reach past the content area into the status bar's strip
+                .ignoresSafeArea(.container, edges: .horizontal)
+                .transition(.opacity)
+            }
         }
         .padding(0)
-        .ignoresSafeArea(UIDevice.isIPhone && vm.gridSize != .small && orientation.isLandscape ? [.all] : [])
+        .ignoresSafeArea(ignoresSafeArea ? [.all] : [])
+        .animation(.smooth, value: orientation.supportsLargeFields)
         
         
         
@@ -129,6 +201,35 @@ struct FieldView: View {
             })
     }
 
+
+    var ignoresSafeArea: Bool {
+        UIDevice.isIPhone && vm.gridSize != .small && orientation.isLandscape
+    }
+
+    var usesOuterDisplayLayout: Bool {
+        orientation.usesOuterDisplayLayout
+    }
+
+    //how far to move the Big field off center on the iPhone Duo's outer display
+    var bigFieldShift: CGFloat {
+        guard usesOuterDisplayLayout && vm.gridSize == .big else { return 0 }
+        return orientation.outerDisplayFieldShift(fieldWidth: vm.outerDisplayFieldWidth(on: orientation))
+    }
+
+    //iPhone Duo, open or closed: its screens don't match the fixed spacing tuned for
+    //regular iPhones in spacerHeight, so center the field in the space it has instead
+    var centersFieldVertically: Bool {
+        usesOuterDisplayLayout || orientation.isLargeIPhoneDisplay
+    }
+
+    //iPhone Duo closed with the status bar down one side
+    var showsFlagAndShovelInStatusBar: Bool {
+        orientation.outerDisplayStatusBarEdge != nil
+    }
+
+    var showsOpenDeviceMessage: Bool {
+        vm.currentFieldNeedsLargeDisplay && !orientation.supportsLargeFields
+    }
 
     func spacerHeight(isLandscape: Bool, gridSize: GridSize) -> CGFloat {
         let deviceType: String = UIDevice.isIPad ? "iPad" : "iPhone"
@@ -213,26 +314,42 @@ struct FieldView: View {
         }
     }
     
-    
-//    func submitClassicScore() async {
-//        Task{
-//            try await GKLeaderboard.submitScore(
-//                vm.gameScore,
-//                context: 0,
-//                player: GKLocalPlayer.local,
-//                leaderboardIDs: ["me.jesse.sheehan.MineFind.classicboard"]
-//            )
-//        }
-//        //calculateAchievements()
-//    }
-    
-    
-    
+
     func limitText(_ upper: Int) {
             if playerName.count > upper {
                 playerName = String(playerName.prefix(upper))
             }
         }
+}
+
+//Covers the field when the iPhone Duo closes, since a huge field won't fit the outer display
+struct OpenDeviceView: View {
+    @State var vm: FieldViewModel
+    
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.background)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                Image(systemName: "iphone.gen3")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.secondary)
+                
+                Text("Open Your iPhone")
+                    .font(.title.bold())
+                
+                Text("The \(vm.sizeLabel(for: .huge)) minefield needs the larger inside display. Open your iPhone to keep playing, or head home.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 320)
+                
+                HomeButtonView(vm: vm)
+            }
+            .padding()
+        }
+    }
 }
 
 #Preview {
