@@ -28,6 +28,8 @@
 		2F539E4A2E675A3B009032A3 /* InstructionsButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F539E492E675A3B009032A3 /* InstructionsButtonView.swift */; };
 		2F539E4E2E676281009032A3 /* Vortex in Frameworks */ = {isa = PBXBuildFile; productRef = 2F539E4D2E676281009032A3 /* Vortex */; };
 		2F539E502E6763B2009032A3 /* ExplosionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F539E4F2E6763B2009032A3 /* ExplosionView.swift */; };
+		2F74B79330A688940088B0A6 /* MotionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F74B79230A688940088B0A6 /* MotionSettings.swift */; };
+		2F74B79530A696F30088B0A6 /* FloatingPointsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F74B79430A696F30088B0A6 /* FloatingPointsView.swift */; };
 		2F87F22E2E69F5B000BA99D0 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F87F22D2E69F5B000BA99D0 /* ImageCache.swift */; };
 		2F87F2302E6C9EFE00BA99D0 /* ScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F87F22F2E6C9EFE00BA99D0 /* ScoreView.swift */; };
 		2F87F2342E6CA27800BA99D0 /* StandardGameOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F87F2332E6CA27800BA99D0 /* StandardGameOptionsView.swift */; };
@@ -68,6 +70,8 @@
 		2F539E472E6758CB009032A3 /* HomeButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeButtonView.swift; sourceTree = "<group>"; };
 		2F539E492E675A3B009032A3 /* InstructionsButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsButtonView.swift; sourceTree = "<group>"; };
 		2F539E4F2E6763B2009032A3 /* ExplosionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplosionView.swift; sourceTree = "<group>"; };
+		2F74B79230A688940088B0A6 /* MotionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSettings.swift; sourceTree = "<group>"; };
+		2F74B79430A696F30088B0A6 /* FloatingPointsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPointsView.swift; sourceTree = "<group>"; };
 		2F87F22D2E69F5B000BA99D0 /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		2F87F22F2E6C9EFE00BA99D0 /* ScoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreView.swift; sourceTree = "<group>"; };
 		2F87F2332E6CA27800BA99D0 /* StandardGameOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardGameOptionsView.swift; sourceTree = "<group>"; };
@@ -163,6 +167,7 @@
 				2F87F2392E6CA9A500BA99D0 /* HighScore.swift */,
 				2F5183582E5CB82D0045EB4A /* FieldViewModel.swift */,
 				2F87F23F2E6F7A0400BA99D0 /* HighScoresViewModel.swift */,
+				2F74B79230A688940088B0A6 /* MotionSettings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -192,6 +197,7 @@
 				2FE0B9F92E5E8A7F003589ED /* DraggableItemView.swift */,
 				2F87F22F2E6C9EFE00BA99D0 /* ScoreView.swift */,
 				2F1719322E7362470050AC6C /* OptionsView.swift */,
+				2F74B79430A696F30088B0A6 /* FloatingPointsView.swift */,
 			);
 			path = InGameViews;
 			sourceTree = "<group>";
@@ -303,6 +309,8 @@
 				2FE0B9FE2E5F6F61003589ED /* NewGameButton.swift in Sources */,
 				2F539E462E6754C4009032A3 /* InstructionsView.swift in Sources */,
 				2F87F22E2E69F5B000BA99D0 /* ImageCache.swift in Sources */,
+				2F74B79530A696F30088B0A6 /* FloatingPointsView.swift in Sources */,
+				2F74B79330A688940088B0A6 /* MotionSettings.swift in Sources */,
 				2F1719312E7361380050AC6C /* OptionsButton.swift in Sources */,
 				2F1C2E342E7873D200E97C54 /* OrientationReader.swift in Sources */,
 				2F51833A2E5914420045EB4A /* ContentView.swift in Sources */,
@@ -461,7 +469,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = MineSeeker/MineSeeker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = X3MYNPLVQY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -480,7 +488,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.jesse.sheehan.MineFind;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -501,7 +509,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = MineSeeker/MineSeeker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = X3MYNPLVQY;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -520,7 +528,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = me.jesse.sheehan.MineFind;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

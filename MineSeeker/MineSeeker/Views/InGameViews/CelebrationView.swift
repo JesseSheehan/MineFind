@@ -12,22 +12,31 @@ struct CelebrationView: View {
     
     var vm: FieldViewModel
 
-    var body: some View {
-            VortexView(createFallingConfetti()) {
-                Rectangle()
-                    .fill(.white)
-                    .frame(width: 20)
-                    .tag("circle")
-                    .frame(width: 10, height: 10)
-            }
-            .onAppear { //location in
-                vm.playSFX("win1")
-                vm.prepareHaptics()
-                celebrationHaptic()
-            }
-            
+    @Environment(\.reducesMotion) var reducesMotion
 
+    var body: some View {
+        Group {
+            //Reduce Motion: skip the falling confetti; the sound and haptics still play
+            if !reducesMotion {
+                VortexView(createFallingConfetti()) {
+                    Rectangle()
+                        .fill(.white)
+                        .frame(width: 20)
+                        .tag("circle")
+                        .frame(width: 10, height: 10)
+                }
+            } else {
+                //keeps something on screen so onAppear still fires
+                Color.clear
+            }
+        }
+        .onAppear { //location in
+            vm.playSFX("win1")
+            vm.prepareHaptics()
+            celebrationHaptic()
+        }
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
         
     }
     

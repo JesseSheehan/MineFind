@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct OptionsButton: View {
+    @Environment(\.reducesMotion) var reducesMotion
     
     var vm: FieldViewModel
     
@@ -19,7 +20,7 @@ struct OptionsButton: View {
         } label: {
             Label("Options", systemImage: "gearshape")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.rotate)
+                .symbolEffect(.rotate, isActive: !reducesMotion)
         }
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)

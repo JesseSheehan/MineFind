@@ -21,6 +21,7 @@ struct FieldView: View {
     @AppStorage("gamesLost") var gamesLost: Int = 0
     
     @State var explosion = false
+    @Environment(\.reducesMotion) var reducesMotion
     
     @State var vm: FieldViewModel
     
@@ -50,10 +51,7 @@ struct FieldView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     StandardGridView(vm: vm)
                         .allowsHitTesting(vm.gameState == .playing ? true : false)
-                        .transition(.asymmetric(
-                            insertion: .offset(x: 1000),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: 1000, removalX: 1000, reducesMotion: reducesMotion))
                     
                     //this .anim makes bombs appear automatically instead of fade in
                         .animation(nil, value: vm.gameState)
@@ -86,18 +84,10 @@ struct FieldView: View {
                                         .font(.caption.bold())
                                 }
                             }
-                            .transition(.asymmetric(
-                                insertion: .opacity,
-                                removal: .offset(x: 1000))
-                            )
+                            .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                         } else if vm.gameState == .playing {
                             StandardGameOptionsView(vm: vm)
-                                .transition(.asymmetric(
-                                    insertion: .opacity,
-                                    //insertion: .offset(x: 1000),
-                                    removal: .offset(x: 1000))
-                                            
-                                )
+                                .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                             
                             
                         } else {
@@ -109,10 +99,7 @@ struct FieldView: View {
                                 NewGameButton(vm: vm)
                                 HomeButtonView(vm: vm)
                             }
-                            .transition(.asymmetric(
-                                insertion: .opacity,
-                                removal: .offset(x: 1000))
-                            )
+                            .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                             .padding()
                         }
                     }
@@ -195,7 +182,10 @@ struct FieldView: View {
 //                } else if vm.gameState == .lost {
 //                    Alert(title: Text("You Lost"), message: Text("Better luck next time!"), dismissButton: .default(Text("OK")))
                 } else  {
-                    Alert(title: vm.checkedTooSoonText, message: Text(vm.minusPointsText), dismissButton: .default(Text("OK")))
+                    //after the hint alert closes, the points lost float up from the score
+                    Alert(title: vm.checkedTooSoonText, message: Text(vm.minusPointsText), dismissButton: .default(Text("OK")) {
+                        vm.showHintScoreChange()
+                    })
                 }
                 
             })

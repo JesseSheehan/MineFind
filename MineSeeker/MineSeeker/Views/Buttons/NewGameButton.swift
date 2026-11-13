@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NewGameButton: View {
+    @Environment(\.reducesMotion) var reducesMotion
     @EnvironmentObject var orientation: OrientationModel
 
     
@@ -35,8 +36,8 @@ struct NewGameButton: View {
         } label: {
             Label("New Game", systemImage: "plus.circle.fill")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
-                .symbolEffect(.rotate)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
+                .symbolEffect(.rotate, isActive: !reducesMotion)
         }
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)

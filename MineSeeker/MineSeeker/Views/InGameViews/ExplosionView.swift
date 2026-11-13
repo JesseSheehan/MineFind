@@ -19,34 +19,52 @@ struct ExplosionView: View {
 //    var xCoord: CGFloat
 //    var yCoord: CGFloat
     @State var tapThrough = false
+    @Environment(\.reducesMotion) var reducesMotion
+    //Reduce Motion: a quick red flash that fades out instead of flying particles
+    @State private var flashOpacity = 0.35
     
     var body: some View {
-        VortexViewReader { proxy in
-            VortexView(createExplosion()) {
-                Rectangle()
-                   // .fill(.red)
-                    .fill(.white)
-                    .blur(radius: 3)
-                    //.blendMode(.plusLighter)
-                    .frame(width: 20, height: 20)
-                    .tag("one")
+        Group {
+            if reducesMotion {
+                Color.red
+                    .opacity(flashOpacity)
+                    .ignoresSafeArea()
+                    .onAppear {
+                        withAnimation(.easeOut(duration: 0.8)) {
+                            flashOpacity = 0
+                        }
+                    }
+            } else {
+                VortexViewReader { proxy in
+                    VortexView(createExplosion()) {
+                        Rectangle()
+                           // .fill(.red)
+                            .fill(.white)
+                            .blur(radius: 3)
+                            //.blendMode(.plusLighter)
+                            .frame(width: 20, height: 20)
+                            .tag("one")
 
-            }
-          
-            .onAppear { //location in
-                proxy.burst()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-                    tapThrough = true
+                    }
+                    .onAppear { //location in
+                        proxy.burst()
+                    }
+                    
+        //            Button("burst", action: proxy.burst)
                 }
-                vm.playSFX("lose2")
-                vm.prepareHaptics()
-                explosionHaptic()
             }
-            
-            
-//            Button("burst", action: proxy.burst)
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+                tapThrough = true
+            }
+            vm.playSFX("lose2")
+            vm.prepareHaptics()
+            explosionHaptic()
         }
         .allowsHitTesting(tapThrough ? false : true)
+        //purely visual; VoiceOver hears about the loss from the game's announcement
+        .accessibilityHidden(true)
         //.zIndex(100)
     }
     

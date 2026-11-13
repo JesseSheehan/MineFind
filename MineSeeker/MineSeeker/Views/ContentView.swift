@@ -15,6 +15,11 @@ struct ContentView: View {
 
     @AppStorage("gamesWon") var gamesWon: Int = 0
     @AppStorage("lastVersionPromptedForReview") var lastVersionPromptedForReview: String = ""
+    @AppStorage("reduceMotion") var reduceMotionSetting: Bool = false
+    @Environment(\.accessibilityReduceMotion) var systemReduceMotion
+
+    //the system setting or the in-game option both turn motion down
+    var reducesMotion: Bool { systemReduceMotion || reduceMotionSetting }
     
     @State var vm = FieldViewModel()
     
@@ -23,34 +28,19 @@ struct ContentView: View {
                 
                 if vm.gameState == .home || vm.gameState == .reloadingGame {
                     HomeView(vm: vm)
-                        .transition(.asymmetric(
-                            insertion: .opacity.animation(.smooth),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                 } else if vm.gameState == .instructions {
                     InstructionsView(vm: vm)
-                        .transition(.asymmetric(
-                            insertion: .opacity.animation(.smooth),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                 } else if vm.gameState == .highScoreList {
                     HighScoreListView(vm: vm)
-                        .transition(.asymmetric(
-                            insertion: .opacity.animation(.smooth),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                 } else if vm.gameState == .options {
                     OptionsView(vm: vm)
-                        .transition(.asymmetric(
-                            insertion: .opacity.animation(.smooth),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: nil, removalX: 1000, reducesMotion: reducesMotion))
                 } else {
                     FieldView(vm: vm)
-                        .transition(.asymmetric(
-                            insertion: .offset(x: -1000),
-                            removal: .offset(x: 1000))
-                        )
+                        .transition(.screenSlide(insertionX: -1000, removalX: 1000, reducesMotion: reducesMotion))
                 }
             }
             .onAppear {
@@ -81,6 +71,7 @@ struct ContentView: View {
                 }
         }
             .animation(.smooth, value: vm.gameState)
+            .environment(\.reducesMotion, reducesMotion)
         
     }
 }

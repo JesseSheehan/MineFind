@@ -25,6 +25,15 @@ struct DraggableItemView: View {
     
     var onChanged: ((CGPoint, String) -> DragState)?
     var onEnded: ((CGPoint, String) -> Void)?
+    //gently sways back and forth (the home screen flag)
+    var sways = false
+    @Environment(\.reducesMotion) var reducesMotion
+    @State private var isSwayedRight = false
+
+    private var swayDegrees: Double {
+        guard sways && !reducesMotion else { return 0 }
+        return isSwayedRight ? 5 : -5
+    }
     
     private var shadowColor: Color {
         if dragAmount == .zero {
@@ -55,6 +64,15 @@ struct DraggableItemView: View {
             Image(imageToDrag)
                 .resizable()
                 .frame(width: orientation.isLandscape ? 75 : 90, height: orientation.isLandscape ? 75 : 90)
+                .rotationEffect(.degrees(swayDegrees), anchor: .bottom)
+                //the repeating animation is only started for the swaying flag, so it can't
+                //slow down other changes like the resize when the device rotates
+                .onAppear {
+                    guard sways && !reducesMotion else { return }
+                    withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                        isSwayedRight = true
+                    }
+                }
                 .offset(dragAmount)
                 .zIndex(dragAmount == .zero ? 0 : 1)
                 .shadow(color: shadowColor,
@@ -81,6 +99,7 @@ struct DraggableItemView: View {
                             
                             self.dragAmount = .zero
                             self.dragState = .notOnTile
+                            vm.clearDragHover()
                         }
                 )
                 .sensoryFeedback(.impact(weight: .medium, intensity: 0.7), trigger: dragState == .canPlaceOnTile)
@@ -88,6 +107,8 @@ struct DraggableItemView: View {
                 
         }
         .padding(0)
+        //dragging doesn't work with VoiceOver; each tile has Flag/Remove Flag actions instead
+        .accessibilityHidden(true)
     }
 }
 

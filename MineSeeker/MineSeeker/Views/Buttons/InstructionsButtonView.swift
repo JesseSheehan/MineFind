@@ -7,6 +7,7 @@
 import SwiftUI
 
 struct InstructionsButtonView: View {
+    @Environment(\.reducesMotion) var reducesMotion
     @State var vm: FieldViewModel
     
     var body: some View {
@@ -16,7 +17,7 @@ struct InstructionsButtonView: View {
         } label: {
             Label("How to Play ", systemImage: "questionmark.text.page.fill")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
         }
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)

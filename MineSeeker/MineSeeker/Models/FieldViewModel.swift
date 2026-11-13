@@ -83,9 +83,20 @@ final class FieldViewModel {
     //
     var gameScore: Int = 0
     var mineCount: Int = 0
-    var flagCount: Int = 0
+    //worked out from the tiles so it's always right, even when digging clears a flag
+    var flagCount: Int { gameTiles.filter(\.isFlagged).count }
     var hintsUsed: Int = 0
     
+    //ANIMATION
+    //the tile under the dragged flag/shovel, highlighted green or red
+    var dragHover: DragHover?
+    //points floating up from the score (hint penalties)
+    var scorePop: ScorePop?
+    //the hint's score change, shown once its alert is dismissed
+    var pendingHintScoreChange: Int?
+    //bumping this shakes the board
+    var shakeCount = 0
+
     //HAPTICS
     var engine: CHHapticEngine?
     
@@ -188,8 +199,15 @@ final class FieldViewModel {
             let oldRotation = gridRotation
             let delta = (newRotation.rawValue - oldRotation.rawValue + 4) % 4
 
-            for _ in 0..<delta {
-                rotateTilesForOrientation(isClockwise: true)
+            //tiles swap places when the field turns, which would otherwise replay their
+            //reveal and flag animations
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                for _ in 0..<delta {
+                    rotateTilesForOrientation(isClockwise: true)
+                }
+                dragHover = nil
             }
 
             gridRotation = newRotation
@@ -242,7 +260,6 @@ final class FieldViewModel {
         rowCount = getRowCount(size: gridSize, isLandscape: isLandscape)
         columnCount = getColumnCount(size: gridSize, isLandscape: isLandscape)
         mineCount = 0
-        flagCount = 0
         gameScore = 0
         gameStarted = false
         isFirstTile = true
@@ -255,6 +272,9 @@ final class FieldViewModel {
         framesReady = false
         
         newHighScore = false
+        dragHover = nil
+        scorePop = nil
+        pendingHintScoreChange = nil
         gameTiles = createTiles()
         
         gameStarted = true
@@ -369,7 +389,9 @@ final class FieldViewModel {
         return neighbors.filter { $0.0 >= 0 && $0.0 < rowCount && $0.1 >= 0 && $0.1 < columnCount }
     }
     
-    func gameOver() {
+    //index is the mine that was hit; the rest of the board is revealed in a wave spreading out from it
+    func gameOver(from index: Int? = nil) {
+        let hiddenTiles = gameTiles.indices.filter { !gameTiles[$0].isRevealed }
         gameState = .lost
         gameIsOver = true
         //showGameStatusAlert = true
@@ -378,6 +400,9 @@ final class FieldViewModel {
         for i in self.gameTiles.indices {
             
             gameTiles[i].isRevealed = true
+        }
+        if let index {
+            setRevealDelays(for: hiddenTiles, from: index, step: 0.05)
         }
         
 //        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -437,7 +462,8 @@ final class FieldViewModel {
             mineCount = mineTiles.count
             gameState = .won
             gameIsOver = true
-            
+            announce("All mines found! You won with \(gameScore) points.", highPriority: true)
+
         }
     }
     
@@ -462,18 +488,33 @@ final class FieldViewModel {
     
     func handleTileReveal(at index: Int) {
         if !gameTiles[index].isRevealed {
+            let hiddenBefore = gameTiles.indices.filter { !gameTiles[$0].isRevealed }
             gameTiles[index].isRevealed = true
             gameTiles[index].isFlagged = false
             adjacentReveal(tile: gameTiles[index])
             gameScore += gameTiles[index].surroundingMineCount == 0 ? 10 : (gameTiles[index].surroundingMineCount * 50)
-            
+
             if gameTiles[index].isMine {
-                gameOver()
+                gameOver(from: index)
+                announce("Boom! You hit a mine. Game over.", highPriority: true)
+            } else {
+                let newlyRevealed = hiddenBefore.filter { gameTiles[$0].isRevealed }
+                setRevealDelays(for: newlyRevealed, from: index, step: 0.03)
+
+                //VoiceOver doesn't re-read a tile after it changes, so say what was found
+                let revealedCount = newlyRevealed.count
+                let mines = gameTiles[index].surroundingMineCount
+                if revealedCount > 1 {
+                    announce("No mines nearby. Revealed \(revealedCount) tiles.")
+                } else {
+                    announce(mines == 0 ? "No mines nearby." : nearbyMinesDescription(mines))
+                }
             }
         }
     }
     
     func hintButton() {
+        let scoreBefore = gameScore
         var mineTiles: [Tile] = []
         var flaggedTiles: [Tile] = []
         var correctTiles: Int = 0
@@ -510,6 +551,7 @@ final class FieldViewModel {
             gameScore += 1
         }
         hintsUsed += 1
+        pendingHintScoreChange = gameScore - scoreBefore
         showGameStatusAlert = true
         playSFX("buttondown1")
     }
@@ -600,20 +642,64 @@ final class FieldViewModel {
     
     func itemMoved(location: CGPoint, textToDrag: String) -> DragState {
         guard let index = tileFrames.firstIndex(where: {
-            $0.contains(location) }) else  { return .notOnTile}
+            $0.contains(location) }) else {
+            clearDragHover()
+            return .notOnTile
+        }
         
         let thisTile = gameTiles[index]
         let canPlace: Bool
         
         switch textToDrag {
         case "Flag":
-            canPlace = !thisTile.isRevealed
+            //a tile that already has a flag can't take another one
+            canPlace = !thisTile.isRevealed && !thisTile.isFlagged
         case "Shovel":
             canPlace = !thisTile.isRevealed && thisTile.isFlagged
         default:
             canPlace = false
         }
+        let hover = DragHover(index: index, canPlace: canPlace)
+        //only update when it changes, since every tile redraws when this does
+        if dragHover != hover {
+            dragHover = hover
+        }
         return canPlace ? .canPlaceOnTile : .cannotPlaceOnTile
+    }
+
+    func clearDragHover() {
+        if dragHover != nil {
+            dragHover = nil
+        }
+    }
+
+    //spaces out reveal animations by distance from the origin tile, so they spread outward
+    private func setRevealDelays(for indices: [Int], from origin: Int, step: Double) {
+        let originTile = gameTiles[origin]
+        for i in indices {
+            let distance = max(abs(gameTiles[i].row - originTile.row), abs(gameTiles[i].column - originTile.column))
+            //capped so huge boards don't take forever
+            gameTiles[i].revealDelay = min(Double(distance) * step, 0.8)
+        }
+    }
+
+    //called when the hint alert is dismissed: floats the score change by the score,
+    //and shakes the board if points were lost
+    func showHintScoreChange() {
+        guard let change = pendingHintScoreChange else { return }
+        pendingHintScoreChange = nil
+        guard change != 0 else { return }
+        let pop = ScorePop(amount: change)
+        scorePop = pop
+        if change < 0 {
+            shakeCount += 1
+        }
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            if self?.scorePop == pop {
+                self?.scorePop = nil
+            }
+        }
     }
     
     
@@ -624,18 +710,47 @@ final class FieldViewModel {
         
         switch textToDrop {
         case "Flag":
-            gameTiles[index].isFlagged = true
-            flagCount += 1
-            checkForMines()
-            
+            setFlag(true, at: index)
+
         case "Shovel":
-            gameTiles[index].isFlagged = false
-            flagCount -= 1
-            checkForMines()
+            setFlag(false, at: index)
 
         default:
             break
         }
+    }
+
+    //places or removes a flag. Used by the dragged flag/shovel and by VoiceOver's tile actions.
+    //does nothing if the tile is already in that state
+    func setFlag(_ flagged: Bool, at index: Int) {
+        guard gameTiles.indices.contains(index),
+              !gameTiles[index].isRevealed,
+              gameTiles[index].isFlagged != flagged else { return }
+        gameTiles[index].isFlagged = flagged
+        checkForMines()
+    }
+
+    //what tapping (or double-tapping with VoiceOver) an unrevealed tile does
+    func digTile(at index: Int) {
+        firstTileRule(at: index)
+        handleTileReveal(at: index)
+    }
+
+    //VoiceOver
+
+    //speaks a message to VoiceOver users (does nothing when VoiceOver is off).
+    //high priority messages aren't cut off by whatever VoiceOver reads next, like an alert
+    func announce(_ message: String, highPriority: Bool = false) {
+        var announcement = AttributedString(message)
+        if highPriority {
+            announcement.accessibilitySpeechAnnouncementPriority = .high
+        }
+        AccessibilityNotification.Announcement(announcement).post()
+    }
+
+    //"1 mine nearby" / "3 mines nearby"
+    func nearbyMinesDescription(_ count: Int) -> String {
+        count == 1 ? "1 mine nearby" : "\(count) mines nearby"
     }
 
     func setTileFrame(index: Int, frame: CGRect) {

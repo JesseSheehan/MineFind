@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HomeButtonView: View {
+    @Environment(\.reducesMotion) var reducesMotion
     
     @State var vm: FieldViewModel
     
@@ -21,7 +22,7 @@ struct HomeButtonView: View {
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)
         .symbolRenderingMode(.multicolor)
-        .symbolEffect(.bounce)
+        .symbolEffect(.bounce, isActive: !reducesMotion)
         .sensoryFeedback(.impact(weight: .heavy), trigger: vm.gameState == .home)
 
         

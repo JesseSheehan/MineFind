@@ -10,6 +10,8 @@ import SwiftUI
 struct InstructionsView: View {
     @EnvironmentObject var orientation: OrientationModel
     @State var vm: FieldViewModel
+    @Environment(\.reducesMotion) var reducesMotion
+    @Environment(\.accessibilityVoiceOverEnabled) var voiceOverEnabled
 
     @State private var demoTileBomb = Tile(row: 1, column: 1, isMine: true, isRevealed: true)
     @State private var demoTileReveal = Tile(row: 1, column: 1, isMine: false, surroundingMineCount: 1)
@@ -53,7 +55,7 @@ struct InstructionsView: View {
                     .allowsHitTesting(position == 0)
                     //the top card slides off (or back on) from the left; cards joining or
                     //leaving the back of the stack just fade
-                    .transition(position == 0 ? .move(edge: .leading).combined(with: .opacity) : .opacity)
+                    .transition(position == 0 && !reducesMotion ? .move(edge: .leading).combined(with: .opacity) : .opacity)
                     .zIndex(Double(-position))
                 }
             }
@@ -160,23 +162,31 @@ struct InstructionsView: View {
                 Image("Flag")
                     .resizable()
                     .frame(width: 90, height: 90)
+                    .accessibilityHidden(true)
             }
         case 1:
             CardPage(title: "Reveal Tiles", message: "Tap on a tile to reveal what's underneath. The number shows how many of the surrounding tiles are mines.") {
                 TileView(tile: $demoTileReveal, vm: vm)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         case 2:
             CardPage(title: "Watch Out", message: "If you tap on a mine tile, it explodes.\n(Which means you lose!)") {
                 TileView(tile: $demoTileBomb, vm: vm)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
             }
         case 3:
-            CardPage(title: "Flag the Mines", message: "Mark each mine by dragging a flag over to the tile.") {
+            //VoiceOver can't drag, so explain the tile actions instead
+            CardPage(title: "Flag the Mines", message: voiceOverEnabled
+                     ? "Mark each mine with a flag. Select a tile, swipe up or down to the Flag action, then double-tap."
+                     : "Mark each mine by dragging a flag over to the tile.") {
                 toolIcon("Flag")
             }
         case 4:
-            CardPage(title: "Dig Up a Flag", message: "To remove a flag from a tile, drag and drop the shovel over the flag.") {
+            CardPage(title: "Dig Up a Flag", message: voiceOverEnabled
+                     ? "To remove a flag, select the flagged tile and double-tap."
+                     : "To remove a flag from a tile, drag and drop the shovel over the flag.") {
                 toolIcon("Shovel")
             }
         case 5:
@@ -215,6 +225,7 @@ struct InstructionsView: View {
                 .resizable()
                 .frame(width: 90, height: 90)
         }
+        .accessibilityHidden(true)
     }
 }
 

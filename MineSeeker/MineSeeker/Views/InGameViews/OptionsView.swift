@@ -11,6 +11,9 @@ struct OptionsView: View {
     
     @AppStorage("sfx") var sfxSave = true
     @AppStorage("music") var musicSave = true
+    @AppStorage("reduceMotion") var reduceMotionSave = false
+    @Environment(\.accessibilityReduceMotion) var systemReduceMotion
+    @Environment(\.reducesMotion) var reducesMotion
     
     var vm: FieldViewModel
     
@@ -26,7 +29,7 @@ struct OptionsView: View {
         } label: {
             Label(vm.sfx ? "Sound Effects On" : "Sound Effects Off", systemImage: "waveform.circle")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
                 .padding(10)
                 .foregroundColor(.primary)
                 .background(vm.sfx ? .blue : .gray)
@@ -44,12 +47,34 @@ struct OptionsView: View {
         } label: {
             Label(vm.music ? "Music On" : "Music Off", systemImage: "music.quarternote.3")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
                 .padding(10)
                 .foregroundColor(.primary)
                 .background(vm.music ? .blue : .gray)
                 .cornerRadius(20)
                 //.
+        }
+
+        Button {
+            reduceMotionSave.toggle()
+            vm.playSFX(reduceMotionSave ? "buttonUp1" : "buttondown1")
+        } label: {
+            Label(reducesMotion ? "Reduce Motion On" : "Reduce Motion Off", systemImage: "figure.walk.motion")
+                .symbolRenderingMode(.multicolor)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
+                .padding(10)
+                .foregroundColor(.primary)
+                .background(reducesMotion ? .blue : .gray)
+                .cornerRadius(20)
+        }
+        //can't be turned off here while it's on in the system Settings
+        .disabled(systemReduceMotion)
+        .accessibilityHint("Replaces explosions, confetti, and sliding screens with simple fades")
+
+        if systemReduceMotion {
+            Text("On because Reduce Motion is on in Settings")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
         Spacer()
         HomeButtonView(vm: vm)

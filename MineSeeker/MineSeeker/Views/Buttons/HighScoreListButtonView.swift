@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HighScoreListButtonView: View {
+    @Environment(\.reducesMotion) var reducesMotion
     
     
     @State var vm: FieldViewModel
@@ -19,7 +20,7 @@ struct HighScoreListButtonView: View {
         } label: {
             Label("High Scores", systemImage: "list.number")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
         }
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct CheckButtonView: View {
+    @Environment(\.reducesMotion) var reducesMotion
     
     @State var vm: FieldViewModel
     @Environment(\.modelContext) private var modelContext
@@ -25,7 +26,7 @@ struct CheckButtonView: View {
         } label: {
             Label("Hint", systemImage: "lightbulb.fill")
                 .symbolRenderingMode(.multicolor)
-                .symbolEffect(.bounce)
+                .symbolEffect(.bounce, isActive: !reducesMotion)
         }
         .buttonStyle(.glassProminent)
         //.buttonStyle(.borderedProminent)

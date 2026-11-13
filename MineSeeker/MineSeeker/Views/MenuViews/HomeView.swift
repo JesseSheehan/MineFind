@@ -37,14 +37,14 @@ struct HomeView: View {
             
             
             if orientation.isLandscape {
-                DraggableItemView(vm: vm, imageToDrag: "Flag")
+                DraggableItemView(vm: vm, imageToDrag: "Flag", sways: true)
             }
             
         }
         .padding(0)
         
         if !orientation.isLandscape {
-            DraggableItemView(vm: vm, imageToDrag: "Flag")
+            DraggableItemView(vm: vm, imageToDrag: "Flag", sways: true)
                 .padding(0)
         }
         
